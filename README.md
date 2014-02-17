@@ -15,7 +15,7 @@ After installing `go-shapeways`
 ```bash
 godoc -http=":8000"
 ```
-Then visit: http://localhost:8000/pkg/github.com/Shapeways/go-shapeways/shapeways
+Then visit: [http://localhost:8000/pkg/github.com/Shapeways/go-shapeways/shapeways](http://localhost:8000/pkg/github.com/Shapeways/go-shapeways/shapeways)
 
 ## Examples
 
