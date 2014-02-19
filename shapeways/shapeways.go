@@ -21,6 +21,7 @@
 package shapeways
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -141,31 +142,160 @@ func (client *Client) Url(path string) string {
 	return fmt.Sprintf("%s/%s/%s", baseUrl, path, version)
 }
 
+// Make an API call to GET /api/v1 https://developers.shapeways.com/docs?li=dh_docs#GET_-api-v1-1
 func (client *Client) GetApiInfo() (interface{}, error) {
 	return client.get(client.Url("/api"), url.Values{})
 }
 
+// Make an API call to GET /api/v1 https://developers.shapeways.com/docs?li=dh_docs#GET_-api-v1-1
 func (client *Client) GetCart() (interface{}, error) {
 	return client.get(client.Url("/orders/cart/"), url.Values{})
 }
 
+// Make an API call to POST /orders/cart/v1] https://developers.shapeways.com/docs?li=dh_docs#POST_-orders-cart-v1
+func (client *Client) AddToCart(Cartdata url.Values) (interface{}, error) {
+	if CartData.Get("modelId") == "" {
+		return nil, errors.New("shapeways.Client.AddToCart missing required key: modelId")
+	}
+
+	return client.post(client.Url("/orders/cart/"), CartData)
+}
+
+// Make an API call to GET /materials/{materialId}/v1 https://developers.shapeways.com/docs?li=dh_docs#GET_-materials-materialId-v1
 func (client *Client) GetMaterial(MaterialId int) (interface{}, error) {
 	return client.get(client.Url(fmt.Sprintf("/materials/%d/", MaterialId)), url.Values{})
 }
 
+// Make an API call to GET /materials/v1 https://developers.shapeways.com/docs?li=dh_docs#GET_-materials-v1
 func (client *Client) GetMaterials() (interface{}, error) {
 	return client.get(client.Url("/materials/"), url.Values{})
 }
 
+// Make an API call to GET /models/v1 https://developers.shapeways.com/docs?li=dh_docs#GET_-models-v1
+func (client *Client) GetModels(Page int) (interface{}, error) {
+	params := url.Values{}
+	params.Set("page", Page)
+	return client.get(client.Url("/models/"), params)
+}
+
+// Make an API call to GET /models/{modelId}/v1 https://developers.shapeways.com/docs?li=dh_docs#GET_-models-modelId-v1
 func (client *Client) GetModel(ModelId int) (interface{}, error) {
 	return client.get(client.Url(fmt.Sprintf("/models/%d/", ModelId)), url.Values{})
 }
 
-func (client *Client) AddModel() (interface{}, error) {
-	required := []string{"file", "fileName"}
-	// for key := range required {
+// Make an API call to POST /models/v1 https://developers.shapeways.com/docs?li=dh_docs#POST_-models-v1
+func (client *Client) AddModel(ModelData url.Values) (interface{}, error) {
+	required := []string{"file", "fileName", "acceptTermsAndConditions", "hasRightsToModel"}
+	for _, key := range required {
+		if ModelData.Get(key) == "" {
+			return nil, errors.New(
+				fmt.Sprintf("shapeways.Client.AddModel missing required key: %s", key),
+			)
+		}
+	}
 
-	// }
+	ModelData.Set(
+		"file",
+		url.QueryEscape(
+			base64.StdEncoding.EncodeToString([]byte(ModelData.Get("file"))),
+		),
+	)
+	return client.post(client.Url("/models/"), ModelData)
+}
 
-	return required, nil
+// Make an API call to GET /models/{modelId}/info/v1 https://developers.shapeways.com/docs?li=dh_docs#GET_-models-modelId-info-v1
+func (client *Client) GetModelInfo(ModelId int) (interface{}, error) {
+	return client.get(client.Url(fmt.Sprintf("/models/%d/info/", Modelid)), url.Values{})
+}
+
+// Make an API call to PUT /models/{modelId}/info/v1 https://developers.shapeways.com/docs?li=dh_docs#PUT_-models-modelId-info-v1
+func (client *Client) UpdateModelInfo(ModelId int, ModelData url.Values) (interface{}, error) {
+	return client.put(client.Url(fmt.Sprintf("/models/%d/", Modelid)), ModelData)
+}
+
+// Make an API call to DELETE /models/{modelId}/v1 https://developers.shapeways.com/docs?li=dh_docs#DELETE_-models-modelId-v1
+func (client *Client) DeleteModel(ModelId int) (interface{}, error) {
+	return client.delete(client.Url(fmt.Sprintf("/models/%d/", Modelid)), url.Values{})
+}
+
+// Make an API call to GET /models/{modelId}/files/{fileVersion}/v1 https://developers.shapeways.com/docs?li=dh_docs#GET_-models-modelId-files-fileVersion-v1
+func (client *Client) GetModelFile(ModelId int, FileVersion int, IncludeFile boolean) (interface{}, error) {
+	params := url.Values{}
+	if IncludeFile {
+		params.Set("file", 1)
+	} else {
+		params.Set("file", 0)
+	}
+	return client.get(client.Url(fmt.Sprintf("/models/%d/files/%d/", ModelId, FileVersion)), params)
+}
+
+// Make an API call to POST /models/{modelId}/photos/v1 https://developers.shapeways.com/docs?li=dh_docs#POST_-models-modelId-photos-v1
+func (client *Client) AddModelPhoto(ModelId int, PhotoData url.Values) (interface{}, error) {
+	if PhotoData.Get("file") == "" {
+		return nil, errors.New("shapeways.Client.AddModelPhoto missing required key: file")
+	}
+
+	PhotoData.Set(
+		"file",
+		url.QueryEscape(
+			base64.StdEncoding.EncodeToString([]byte(PhotoData.Get("file"))),
+		),
+	)
+	return client.post(client.Url(fmt.Sprintf("/models/%d/", ModelId)), PhotoData)
+}
+
+// Make an API call to POST /models/{modelId}/files/v1 https://developers.shapeways.com/docs?li=dh_docs#POST_-models-modelId-files-v1
+func (client *Client) AddModelFile(ModelId int, FileData url.Values) (interface{}, error) {
+	required := []string{"file", "fileName", "acceptTermsAndConditions", "hasRightsToModel"}
+	for _, key := range required {
+		if FileData.Get(key) == "" {
+			return nil, errors.New(
+				fmt.Sprintf("shapeways.Client.AddModelFile missing required key: %s", key),
+			)
+		}
+	}
+
+	FileData.Set(
+		"file",
+		url.QueryEscape(
+			base64.StdEncoding.EncodeToString([]byte(FileData.Get("file"))),
+		),
+	)
+	return client.post(client.Url(fmt.Sprintf("/models/%d/files/", ModelId)), FileData)
+}
+
+// Make an API call to GET /printers/v1 https://developers.shapeways.com/docs?li=dh_docs#GET_-printers-v1
+func (client *Client) GetPrinters() (interface{}, error) {
+	return client.get(client.Url("/printers/"), url.Values{})
+}
+
+// Make an API call to GET /printers/{printerId}/v1 https://developers.shapeways.com/docs?li=dh_docs#GET_-printers-printerId-v1
+func (client *Client) GetPrinter(PrinterId int) (interface{}, error) {
+	return client.get(client.Url(fmt.Sprintf("/printers/%d/", PrinterId)), url.Values{})
+}
+
+// Make an API call GET /categories/v1 https://developers.shapeways.com/docs?li=dh_docs#GET_-categories-v1
+func (client *Client) GetCategories() (interface{}, error) {
+	return client.get(client.Url("/categories/"), url.Values{})
+}
+
+// Make an API call to GET /categories/{categoryId}/v1 https://developers.shapeways.com/docs?li=dh_docs#GET_-categories-categoryId-v1
+func (client *Client) GetCategory(CatId int) (interface{}, error) {
+	return client.get(client.Url(fmt.Sprintf("/categories/%d/", CatId)), url.Values{})
+}
+
+// Make an API call to POST /price/v1 https://developers.shapeways.com/docs?li=dh_docs#POST_-price-v1
+func (client *Client) GetPrice(PriceData url.Values) (interface{}, error) {
+	required := []string{
+		"volume", "area", "xBoundMin", "xBoundMax",
+		"yBoundMin", "yBoundMax", "zBoundMin", "zBoundMax",
+	}
+	for _, key := range required {
+		if PriceData.Get(key) == "" {
+			return nil, errors.New(
+				fmt.Sprintf("shapeways.Client.GetPrice missing required key: %s", key),
+			)
+		}
+	}
+	return client.post(client.Url("/price//"), PriceData)
 }
