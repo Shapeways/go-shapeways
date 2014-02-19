@@ -14,7 +14,7 @@ var client = shapeways.NewClient(
 )
 
 func handleHome(res http.ResponseWriter, req *http.Request) {
-	data, err := client.GetModel(1678596)
+	data, err := client.GetApiInfo()
 	if err != nil {
 		log.Fatal("Error Getting Request Token: ", err)
 	}
