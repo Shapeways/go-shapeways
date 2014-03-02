@@ -1,6 +1,8 @@
 Go Shapeways
 ============
 
+[![Shapeways API Version](http://b.repl.ca/v1/shapeways--api-v1-brightgreen.png)](https://developers.shapeways.com/docs)
+
 [Go](http://golang.org) package for accessing the [Shapeways](http://www.shapeways.com)
 api [http://developers.shapeways.com](http://developers.shapeways.com).
 
