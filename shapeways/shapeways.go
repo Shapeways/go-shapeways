@@ -153,7 +153,7 @@ func (client *Client) GetCart() (interface{}, error) {
 }
 
 // Make an API call to POST /orders/cart/v1] https://developers.shapeways.com/docs?li=dh_docs#POST_-orders-cart-v1
-func (client *Client) AddToCart(Cartdata url.Values) (interface{}, error) {
+func (client *Client) AddToCart(CartData url.Values) (interface{}, error) {
 	if CartData.Get("modelId") == "" {
 		return nil, errors.New("shapeways.Client.AddToCart missing required key: modelId")
 	}
@@ -174,7 +174,7 @@ func (client *Client) GetMaterials() (interface{}, error) {
 // Make an API call to GET /models/v1 https://developers.shapeways.com/docs?li=dh_docs#GET_-models-v1
 func (client *Client) GetModels(Page int) (interface{}, error) {
 	params := url.Values{}
-	params.Set("page", Page)
+	params.Set("page", fmt.Sprint("%d", Page))
 	return client.get(client.Url("/models/"), params)
 }
 
@@ -205,26 +205,26 @@ func (client *Client) AddModel(ModelData url.Values) (interface{}, error) {
 
 // Make an API call to GET /models/{modelId}/info/v1 https://developers.shapeways.com/docs?li=dh_docs#GET_-models-modelId-info-v1
 func (client *Client) GetModelInfo(ModelId int) (interface{}, error) {
-	return client.get(client.Url(fmt.Sprintf("/models/%d/info/", Modelid)), url.Values{})
+	return client.get(client.Url(fmt.Sprintf("/models/%d/info/", ModelId)), url.Values{})
 }
 
 // Make an API call to PUT /models/{modelId}/info/v1 https://developers.shapeways.com/docs?li=dh_docs#PUT_-models-modelId-info-v1
 func (client *Client) UpdateModelInfo(ModelId int, ModelData url.Values) (interface{}, error) {
-	return client.put(client.Url(fmt.Sprintf("/models/%d/", Modelid)), ModelData)
+	return client.put(client.Url(fmt.Sprintf("/models/%d/", ModelId)), ModelData)
 }
 
 // Make an API call to DELETE /models/{modelId}/v1 https://developers.shapeways.com/docs?li=dh_docs#DELETE_-models-modelId-v1
 func (client *Client) DeleteModel(ModelId int) (interface{}, error) {
-	return client.delete(client.Url(fmt.Sprintf("/models/%d/", Modelid)), url.Values{})
+	return client.delete(client.Url(fmt.Sprintf("/models/%d/", ModelId)), url.Values{})
 }
 
 // Make an API call to GET /models/{modelId}/files/{fileVersion}/v1 https://developers.shapeways.com/docs?li=dh_docs#GET_-models-modelId-files-fileVersion-v1
-func (client *Client) GetModelFile(ModelId int, FileVersion int, IncludeFile boolean) (interface{}, error) {
+func (client *Client) GetModelFile(ModelId int, FileVersion int, IncludeFile bool) (interface{}, error) {
 	params := url.Values{}
 	if IncludeFile {
-		params.Set("file", 1)
+		params.Set("file", "1")
 	} else {
-		params.Set("file", 0)
+		params.Set("file", "0")
 	}
 	return client.get(client.Url(fmt.Sprintf("/models/%d/files/%d/", ModelId, FileVersion)), params)
 }
