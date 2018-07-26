@@ -93,7 +93,7 @@ func (client *Oauth2Client) UploadModel(Filename string) (string, error) {
   }
   md := &ModelData {
       File: enc_data,
-      FileName: "hi",
+      FileName: "cube.stl",
       AcceptTermsAndConditions: "1",
       HasRightsToModel: "1",
       Description: "Someone call a doctor, because this cube is SIIIICK.",
@@ -101,10 +101,7 @@ func (client *Oauth2Client) UploadModel(Filename string) (string, error) {
   bytesToUpload, err := json.Marshal(md)
   check(err)
   fmt.Println(string(bytesToUpload))
-  // req, err := http.NewRequest("POST", "https://api.shapeways.com/models/v1", bytes.NewBuffer(bytesToUpload))
-  // req, err := http.NewRequest("POST", "https://api.jw.nyc.shapeways.net/models/v1", bytes.NewBuffer(bytesToUpload))
-  req, err := http.NewRequest("POST", "http://requestbin.fullcontact.com/y5887gy5", bytes.NewBuffer(bytesToUpload))
-  // // req.Header.Set("Content-Type", "application/json")
+  req, err := http.NewRequest("POST", "https://api.shapeways.com/models/v1", bytes.NewBuffer(bytesToUpload))
   req.Header.Set("Authorization","Bearer " + client.BearerToken)
 
   resp, err := client.DoHttpRequest(req)
@@ -156,9 +153,7 @@ func (client *Oauth2Client) GetMaterials() (string, error) {
   req, err := http.NewRequest("GET", materials_url, nil)
   req.Header.Set("Authorization","Bearer " + client.BearerToken)
   resp, err := client.DoHttpRequest(req)
-  if err != nil {
-		panic(err)
-	}
+  check(err)
   defer resp.Body.Close()
 
   var data MaterialsMap
