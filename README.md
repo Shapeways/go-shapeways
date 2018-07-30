@@ -6,6 +6,8 @@ Go Shapeways
 [Go](http://golang.org) package for accessing the [Shapeways](http://www.shapeways.com)
 api [http://developers.shapeways.com](http://developers.shapeways.com).
 
+Sample clients exist for both Oauth1 and Ouath2 in the shapeways/ directory
+
 ## Install
 ```bash
 go get github.com/Shapeways/go-shapeways/shapeways
