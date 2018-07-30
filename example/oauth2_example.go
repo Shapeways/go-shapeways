@@ -1,6 +1,6 @@
 package main
 import "fmt"
-import "../shapeways_oauth2/"
+import "github.com/Shapeways/go-shapeways/shapeways_oauth2"
 
 func main() {
   client := shapeways_oauth2.NewClient("CLIENT_KEY", "CLIENT_SECRET")
