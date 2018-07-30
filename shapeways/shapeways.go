@@ -31,6 +31,7 @@ import (
   "errors"
 )
 
+// Generic error check function
 func check(e error) {
   if e != nil {
     panic(e)
@@ -39,13 +40,21 @@ func check(e error) {
 
 // Structs for holding return types
 type Material struct {
-  MaterialId string `json:materialId`
-  Title string `json:`
+  MaterialId string `json:"materialId"`
+  Title string `json:"title"`
 }
 
 type MaterialsMap struct {
-  Result string `json.result`
-  Materials map[string]Material `json.materials`
+  Result string `json:"result"`
+  Materials map[string]Material `json:"materials"`
+}
+
+
+// Represents a shapeways API Client
+type Oauth2Client struct {
+	BaseUrl, APIVersion          string
+	ConsumerKey, ConsumerSecret  string
+  BearerToken                  string
 }
 
 // Setup a new shapeways.Client, use this instead of creating a Client directly
@@ -59,14 +68,7 @@ func NewClient(ConsumerKey string, ConsumerSecret string) Oauth2Client {
   return client
 }
 
-// Represents a shapeways API Client
-type Oauth2Client struct {
-	BaseUrl, APIVersion          string
-	ConsumerKey, ConsumerSecret  string
-  BearerToken                  string
-}
-
-
+// Helper function to perform request and handle response
 func (client *Oauth2Client) DoHttpRequest(req *http.Request) (*http.Response, error) {
   http_client := &http.Client{}
   resp, err := http_client.Do(req)
@@ -78,12 +80,44 @@ func (client *Oauth2Client) DoHttpRequest(req *http.Request) (*http.Response, er
   return resp, nil
 }
 
+
+// Authorize using Oauth2
+func (client *Oauth2Client) Authenticate() (string, error) {
+	// Result struct for json decode
+	type Result struct {
+		Access_token string `json.access_token`
+		Expiration_time int `json.expires_in`
+		Token_type string `json.token_type`
+	}
+
+	// Build request, including headers, auth type, and post data
+	var jsonStr = []byte("grant_type=client_credentials")
+	req, err := http.NewRequest("POST", "https://api.shapeways.com/oauth2/token", bytes.NewBuffer(jsonStr))
+	check(err)
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.SetBasicAuth(client.ConsumerKey, client.ConsumerSecret)
+	resp, err := client.DoHttpRequest(req)
+	if err != nil {
+		return "failure", errors.New("Request failed")
+	}
+	defer resp.Body.Close()
+	var result Result
+	json.NewDecoder(resp.Body).Decode(&result)
+	if result.Access_token == "" {
+		panic("Access token not returned!")
+	}
+	client.BearerToken = result.Access_token
+	return "success", nil
+}
+
 func (client *Oauth2Client) UploadModel(Filename string) (string, error) {
+	/* Upload a model via the API */
   file_data, err := ioutil.ReadFile(Filename)
   check(err)
+	// Note: model data must be base64 encoded
   enc_data := base64.StdEncoding.EncodeToString(file_data)
-  // fmt.Println(enc_data)
 
+	// Data type described in docs
   type ModelData struct {
     File string `json:"file"`
     FileName string `json:"fileName"`
@@ -97,10 +131,11 @@ func (client *Oauth2Client) UploadModel(Filename string) (string, error) {
       AcceptTermsAndConditions: "1",
       HasRightsToModel: "1",
       Description: "Someone call a doctor, because this cube is SIIIICK.",
-    }
+  }
   bytesToUpload, err := json.Marshal(md)
   check(err)
-  fmt.Println(string(bytesToUpload))
+
+	// Make request w/ packaged struct
   req, err := http.NewRequest("POST", "https://api.shapeways.com/models/v1", bytes.NewBuffer(bytesToUpload))
   req.Header.Set("Authorization","Bearer " + client.BearerToken)
 
@@ -111,37 +146,6 @@ func (client *Oauth2Client) UploadModel(Filename string) (string, error) {
   }
   var result UploadResult
   json.NewDecoder(resp.Body).Decode(&result)
-  fmt.Println(result)
-  return "", nil
-}
-
-// Authorize using Oauth2
-func (client *Oauth2Client) Authenticate() (string, error) {
-  // Result struct for json decode
-  type Result struct {
-      Access_token string `json.access_token`
-      Expiration_time int `json.expires_in`
-      Token_type string `json.token_type`
-  }
-
-  // Build request, including headers, auth type, and post data
-  var jsonStr = []byte("grant_type=client_credentials")
-  req, err := http.NewRequest("POST", "https://api.shapeways.com/oauth2/token", bytes.NewBuffer(jsonStr))
-  // req, err := http.NewRequest("POST", "http://api.jw.nyc.shapeways.net/oauth2/token", bytes.NewBuffer(jsonStr))
-  check(err)
-  req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-  req.SetBasicAuth(client.ConsumerKey, client.ConsumerSecret)
-  resp, err := client.DoHttpRequest(req)
-  if err != nil {
-    return "failure", errors.New("Request failed")
-  }
-  defer resp.Body.Close()
-  var result Result
-  json.NewDecoder(resp.Body).Decode(&result)
-  if result.Access_token == "" {
-    panic("Access token not returned!")
-  }
-  client.BearerToken = result.Access_token
   return "success", nil
 }
 
