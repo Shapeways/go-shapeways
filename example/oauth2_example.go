@@ -1,9 +1,9 @@
 package main
 import "fmt"
-import "../shapeways"
+import "../shapeways_oauth2/"
 
 func main() {
-  client := shapeways.NewClient("CLIENT_KEY", "CLIENT_SECRET")
+  client := shapeways_oauth2.NewClient("CLIENT_KEY", "CLIENT_SECRET")
 
   // Authenticate client
   status, err := client.Authenticate()
