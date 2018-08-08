@@ -21,69 +21,67 @@
 package shapeways_oauth2
 
 import (
+	"bytes"
+	"encoding/base64"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"io/ioutil"
 	"net/http"
-  "io/ioutil"
-  "bytes"
-  "encoding/json"
-  "encoding/base64"
-  "strconv"
-  "fmt"
-  "errors"
+	"strconv"
 )
 
 // Generic error check function
 func check(e error) {
-  if e != nil {
-    panic(e)
-  }
+	if e != nil {
+		panic(e)
+	}
 }
 
 // Structs for holding return types
 type Material struct {
-  MaterialId string `json:"materialId"`
-  Title string `json:"title"`
+	MaterialId string `json:"materialId"`
+	Title      string `json:"title"`
 }
 
 type MaterialsMap struct {
-  Result string `json:"result"`
-  Materials map[string]Material `json:"materials"`
+	Result    string              `json:"result"`
+	Materials map[string]Material `json:"materials"`
 }
-
 
 // Represents a shapeways API Client
 type Oauth2Client struct {
-	BaseUrl, APIVersion          string
-	ConsumerKey, ConsumerSecret  string
-  BearerToken                  string
+	BaseUrl, APIVersion         string
+	ConsumerKey, ConsumerSecret string
+	BearerToken                 string
 }
 
 // Setup a new shapeways.Client, use this instead of creating a Client directly
 func NewClient(ConsumerKey string, ConsumerSecret string) Oauth2Client {
 	client := Oauth2Client{
-		BaseUrl:          "https://api.shapeways.com",
-		APIVersion:       "v1",
-    ConsumerKey:      ConsumerKey,
-    ConsumerSecret:   ConsumerSecret,
+		BaseUrl:        "https://api.shapeways.com",
+		APIVersion:     "v1",
+		ConsumerKey:    ConsumerKey,
+		ConsumerSecret: ConsumerSecret,
 	}
-  return client
+	return client
 }
 
 // Helper function to perform request and handle response
 func (client *Oauth2Client) DoHttpRequest(req *http.Request) (*http.Response, error) {
-  http_client := &http.Client{}
-  resp, err := http_client.Do(req)
-  check(err)
-  return resp, nil
+	http_client := &http.Client{}
+	resp, err := http_client.Do(req)
+	check(err)
+	return resp, nil
 }
-
 
 // Authorize using Oauth2
 func (client *Oauth2Client) Authenticate() (string, error) {
 	// Result struct for json decode
 	type Result struct {
-		Access_token string `json.access_token`
-		Expiration_time int `json.expires_in`
-		Token_type string `json.token_type`
+		Access_token    string `json.access_token`
+		Expiration_time int    `json.expires_in`
+		Token_type      string `json.token_type`
 	}
 
 	// Build request, including headers, auth type, and post data
@@ -108,73 +106,73 @@ func (client *Oauth2Client) Authenticate() (string, error) {
 
 func (client *Oauth2Client) UploadModel(Filename string) (string, error) {
 	/* Upload a model via the API */
-  file_data, err := ioutil.ReadFile(Filename)
-  check(err)
+	file_data, err := ioutil.ReadFile(Filename)
+	check(err)
 	// Note: model data must be base64 encoded
-  enc_data := base64.StdEncoding.EncodeToString(file_data)
+	enc_data := base64.StdEncoding.EncodeToString(file_data)
 
 	// Data type described in docs
-  type ModelData struct {
-    File string `json:"file"`
-    FileName string `json:"fileName"`
-    AcceptTermsAndConditions string `json:"acceptTermsAndConditions"`
-    Description string `json:"description"`
-    HasRightsToModel string `json:"hasRightsToModel"`
-  }
-  md := &ModelData {
-      File: enc_data,
-      FileName: "cube.stl",
-      AcceptTermsAndConditions: "1",
-      HasRightsToModel: "1",
-      Description: "Someone call a doctor, because this cube is SIIIICK.",
-  }
-  bytesToUpload, err := json.Marshal(md)
-  check(err)
+	type ModelData struct {
+		File                     string `json:"file"`
+		FileName                 string `json:"fileName"`
+		AcceptTermsAndConditions string `json:"acceptTermsAndConditions"`
+		Description              string `json:"description"`
+		HasRightsToModel         string `json:"hasRightsToModel"`
+	}
+	md := &ModelData{
+		File:                     enc_data,
+		FileName:                 "cube.stl",
+		AcceptTermsAndConditions: "1",
+		HasRightsToModel:         "1",
+		Description:              "Someone call a doctor, because this cube is SIIIICK.",
+	}
+	bytesToUpload, err := json.Marshal(md)
+	check(err)
 
 	// Make request w/ packaged struct
-  req, err := http.NewRequest("POST", "https://api.shapeways.com/models/v1", bytes.NewBuffer(bytesToUpload))
-  req.Header.Set("Authorization","Bearer " + client.BearerToken)
+	req, err := http.NewRequest("POST", "https://api.shapeways.com/models/v1", bytes.NewBuffer(bytesToUpload))
+	req.Header.Set("Authorization", "Bearer "+client.BearerToken)
 
-  resp, err := client.DoHttpRequest(req)
-  defer resp.Body.Close()
-  type UploadResult struct {
-    Result string `json.result`
-  }
-  var result UploadResult
-  json.NewDecoder(resp.Body).Decode(&result)
-  return "success", nil
+	resp, err := client.DoHttpRequest(req)
+	defer resp.Body.Close()
+	type UploadResult struct {
+		Result string `json.result`
+	}
+	var result UploadResult
+	json.NewDecoder(resp.Body).Decode(&result)
+	return "success", nil
 }
 
 func (client *Oauth2Client) GetMaterials() (string, error) {
-  /* Get a specific material in our portfolio */
+	/* Get a specific material in our portfolio */
 
-  // Build request
-  var materials_url = "https://api.shapeways.com/materials/v1"
-  req, err := http.NewRequest("GET", materials_url, nil)
-  req.Header.Set("Authorization","Bearer " + client.BearerToken)
-  resp, err := client.DoHttpRequest(req)
-  check(err)
-  defer resp.Body.Close()
+	// Build request
+	var materials_url = "https://api.shapeways.com/materials/v1"
+	req, err := http.NewRequest("GET", materials_url, nil)
+	req.Header.Set("Authorization", "Bearer "+client.BearerToken)
+	resp, err := client.DoHttpRequest(req)
+	check(err)
+	defer resp.Body.Close()
 
-  var data MaterialsMap
+	var data MaterialsMap
 	json.NewDecoder(resp.Body).Decode(&data)
-  return "success", nil
+	return "success", nil
 }
 
 func (client *Oauth2Client) GetMaterial(MaterialId int) (Material, error) {
-  /* Get all materials in our portfolio */
+	/* Get all materials in our portfolio */
 
-  // Build request
-  var materials_url = "https://api.shapeways.com/materials/" + strconv.Itoa(MaterialId) + "/v1"
-  req, err := http.NewRequest("GET", materials_url, nil)
-  req.Header.Set("Authorization","Bearer " + client.BearerToken)
+	// Build request
+	var materials_url = "https://api.shapeways.com/materials/" + strconv.Itoa(MaterialId) + "/v1"
+	req, err := http.NewRequest("GET", materials_url, nil)
+	req.Header.Set("Authorization", "Bearer "+client.BearerToken)
 
-  resp, err := client.DoHttpRequest(req)
-  if err != nil {
+	resp, err := client.DoHttpRequest(req)
+	if err != nil {
 		panic(err)
 	}
 	defer resp.Body.Close()
-  var data Material
-  json.NewDecoder(resp.Body).Decode(&data)
-  return data, nil
+	var data Material
+	json.NewDecoder(resp.Body).Decode(&data)
+	return data, nil
 }
